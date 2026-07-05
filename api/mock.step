@@ -1,0 +1,14 @@
+ISO-10303-21;
+HEADER;
+FILE_DESCRIPTION(('FreeCAD Model'),'2;1');
+FILE_NAME('/mock.step','2023-10-27T10:00:00',(''),(''),'Open CASCADE STEP processor 7.5','FreeCAD','Unknown');
+FILE_SCHEMA(('AUTOMOTIVE_DESIGN { 1 0 10303 214 1 1 1 1 }'));
+ENDSEC;
+DATA;
+#1 = APPLICATION_PROTOCOL_DEFINITION('international standard','automotive_design',2000,#2);
+#2 = APPLICATION_CONTEXT('core data for automotive mechanical design processes');
+#3 = SHAPE_DEFINITION_REPRESENTATION(#4,#10);
+#4 = PRODUCT_DEFINITION_SHAPE('','',#5);
+#5 = PRODUCT_DEFINITION('design','',#6,#9);
+ENDSEC;
+END-ISO-10303-21;
