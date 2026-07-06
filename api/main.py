@@ -109,6 +109,7 @@ async def predict_cad(request: Request, file: UploadFile = File(...)):
 
         logger.info("🔧 Building face-adjacency graph…")
         try:
+            #CHECK ----------
             dgl_graph = build_face_adjacency_graph(upload_path)
         except ValueError as exc:
             raise HTTPException(status_code=422, detail=str(exc))
@@ -122,10 +123,12 @@ async def predict_cad(request: Request, file: UploadFile = File(...)):
                 ),
             )
 
+        #CHECK ----------
         save_graph(dgl_graph, graph_path)
 
         logger.info("🔧 Building render mesh…")
         try:
+            #CHECK ----------
             stl_path_out, tri_mapping = build_render_mesh(upload_path, stl_path)
         except ValueError as exc:
             raise HTTPException(status_code=422, detail=str(exc))
@@ -137,8 +140,10 @@ async def predict_cad(request: Request, file: UploadFile = File(...)):
             )
 
         logger.info("🧠 Running UV-Net segmentation inference…")
+        #CHECK ----------
         class_indices = run_inference(dgl_graph)
 
+        #CHECK ----------
         predictions = map_predictions(class_indices)
         
         # --- Print human-readable results to console ---
