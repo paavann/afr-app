@@ -95,7 +95,8 @@ export function getDetectedFeatures(predictions) {
   const countMap = new Map();
 
   for (const pred of predictions) {
-    const color = getFeatureColor(pred);
+    const featureClass = typeof pred === 'object' && pred !== null ? pred.type : pred;
+    const color = getFeatureColor(featureClass);
     const key = color.label;
     if (countMap.has(key)) {
       countMap.get(key).count++;

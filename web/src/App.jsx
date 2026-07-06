@@ -186,7 +186,7 @@ export default function App() {
             </div>
 
             {/* Legend panel — overlaid on the right */}
-            <div className="absolute top-4 right-4 z-10">
+            <div className="absolute top-4 right-4 z-10 w-70">
               <FeatureLegend
                 predictions={predictions}
                 fileInfo={fileInfo}

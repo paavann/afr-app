@@ -10,7 +10,7 @@ export default function FeatureLegend({ predictions, fileInfo, onReset }) {
   return (
     <div className="glass rounded-none p-6 w-full max-w-[300px] animate-fade-in-up flex flex-col gap-4 max-h-[calc(100vh-140px)] overflow-y-auto">
       {/* Panel header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between px-5">
         <div className="flex items-center gap-2">
           <div className="w-7 h-7 rounded-none bg-gradient-to-br from-accent-primary/30 to-accent-bright/15 flex items-center justify-center">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-accent-secondary">
@@ -25,7 +25,7 @@ export default function FeatureLegend({ predictions, fileInfo, onReset }) {
         {onReset && (
           <button
             onClick={onReset}
-            className="text-[11px] text-dark-300 hover:text-error transition-colors px-2 py-1 rounded-none hover:bg-red-500/10 cursor-pointer"
+            className="text-[11px] text-dark-300 hover:text-error transition-colors px-2 py-1 rounded-none hover:bg-red-500/10 cursor-pointer mr-10"
           >
             Reset
           </button>
@@ -83,11 +83,11 @@ export default function FeatureLegend({ predictions, fileInfo, onReset }) {
           </h3>
           <div className="grid grid-cols-2 gap-2">
             {[
-              { label: 'Faces',    value: fileInfo.num_faces },
+              { label: 'Faces', value: fileInfo.num_faces },
               { label: 'Vertices', value: fileInfo.num_vertices?.toLocaleString() },
               { label: 'Triangles', value: fileInfo.num_triangles?.toLocaleString() },
               { label: 'Inference', value: `${fileInfo.processing_time_ms}ms` },
-              { label: 'Model',    value: fileInfo.model_version },
+              { label: 'Model', value: fileInfo.model_version },
               { label: 'Confidence', value: `${(fileInfo.confidence * 100).toFixed(0)}%` },
             ].map(item => (
               <div key={item.label} className="flex flex-col p-3 rounded-none bg-dark-700/30">
