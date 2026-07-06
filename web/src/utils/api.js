@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE = 'http://localhost:8000';
+const API_BASE = import.meta.env.VITE_BASE_URL || 'http://localhost:8000';
 
 const apiClient = axios.create({
   baseURL: API_BASE,
@@ -41,7 +41,13 @@ export async function predictCAD(file, onProgress) {
  * @returns {Promise<ArrayBuffer>}
  */
 export async function fetchSTL(stlUrl) {
-  const url = stlUrl.startsWith('http') ? stlUrl : `${API_BASE}${stlUrl}`;
+  let url = stlUrl.startsWith('http') ? stlUrl : `${API_BASE}${stlUrl}`;
+
+  // Cloud Proxy Fix: Force HTTPS if the URL belongs to Hugging Face
+  // (We use an IF statement so we don't break your localhost testing later)
+  if (url.includes('hf.space')) {
+    url = url.replace('http://', 'https://');
+  }
 
   const response = await axios.get(url, {
     responseType: 'arraybuffer',
