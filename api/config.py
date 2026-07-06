@@ -64,7 +64,7 @@ SURFACE_TYPE_CLASS_MAP: dict[int, str] = {
 }
 
 # Active class map — swap to SURFACE_TYPE_CLASS_MAP if using a different model
-ACTIVE_CLASS_MAP: dict[int, str] = SURFACE_TYPE_CLASS_MAP
+ACTIVE_CLASS_MAP: dict[int, str] = MFCAD_CLASS_MAP
 
 # Server
 API_HOST: str = os.getenv("API_HOST", "0.0.0.0")
