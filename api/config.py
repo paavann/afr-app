@@ -13,7 +13,7 @@ for _d in (UPLOAD_DIR, GRAPH_DIR, MESH_DIR, STATIC_DIR):
     _d.mkdir(parents=True, exist_ok=True)
 
 CHECKPOINT_PATH = Path(
-    os.getenv("CHECKPOINT_PATH", str(BASE_DIR / "checkpoints" / "best.ckpt"))
+    os.getenv("CHECKPOINT_PATH", str(BASE_DIR / "checkpoints" / "uvnet-fusiongallery.ckpt"))
 )
 
 
@@ -94,7 +94,7 @@ FEATURE_OPERATION_CLASS_MAP: dict[int, str] = {
 # Active class map. MUST match, in order, the exact label space your
 # checkpoint's classifier head was trained against — index i here must mean
 # the same thing as class index i in the model's output logits.
-ACTIVE_CLASS_MAP: dict[int, str] = MFCAD_CLASS_MAP
+ACTIVE_CLASS_MAP: dict[int, str] = FEATURE_OPERATION_CLASS_MAP
 
 # Server
 API_HOST: str = os.getenv("API_HOST", "0.0.0.0")

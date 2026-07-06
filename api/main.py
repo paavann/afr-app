@@ -140,6 +140,18 @@ async def predict_cad(request: Request, file: UploadFile = File(...)):
         class_indices = run_inference(dgl_graph)
 
         predictions = map_predictions(class_indices)
+        
+        # --- Print human-readable results to console ---
+        logger.info("=" * 60)
+        logger.info("  RESULTS FOR: %s", original_filename)
+        logger.info("  TOTAL FACES: %d", len(predictions))
+        logger.info("-" * 60)
+        logger.info("  Face ID  |  Feature Type")
+        logger.info("-" * 60)
+        for p in predictions:
+            logger.info("    %4d   |  %s", p['face_id'], p['type'])
+        logger.info("=" * 60)
+
         base_url = str(request.base_url).rstrip("/")
         mesh_url = f"{base_url}/static/{stl_filename}"
 

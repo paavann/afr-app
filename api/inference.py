@@ -41,17 +41,12 @@ def _load_model(checkpoint_path: Path | None = None) -> object:
     ckpt = checkpoint_path or CHECKPOINT_PATH
 
     if not ckpt.exists():
-        logger.warning(
-            "Checkpoint not found at '%s'. Inference will use STUB predictions. "
-            "Place your trained best.ckpt in api/checkpoints/ to enable real inference.",
-            ckpt,
-        )
-        _model = None
-        return _model
+        logger.error("Checkpoint not found at '%s'. Inference cannot proceed.", ckpt)
+        raise FileNotFoundError(f"Checkpoint not found at '{ckpt}'")
 
     try:
         # Attempt to import the real UV-Net segmentation model
-        from uvnet.models import Segmentation
+        from original_uvnet import Segmentation
 
         # --- Try Lightning-style loading first ---
         try:
@@ -116,11 +111,8 @@ def _load_model(checkpoint_path: Path | None = None) -> object:
             _model.to(_device)
 
     except ImportError:
-        logger.warning(
-            "Could not import 'uvnet.models.Segmentation'. "
-            "Ensure the UV-Net repo is on PYTHONPATH. Using stub predictions."
-        )
-        _model = None
+        logger.error("Could not import 'original_uvnet.Segmentation'.")
+        raise
     except Exception as exc:
         logger.error("Failed to load checkpoint: %s", exc, exc_info=True)
         _model = None
@@ -141,14 +133,7 @@ def run_inference(graph: "dgl.DGLGraph") -> list[int]:
     model = get_model()
 
     if model is None:
-        # ── Stub mode: return mock predictions so the API is testable
-        # without a real checkpoint.
-        num_faces = graph.num_nodes()
-        logger.info(
-            "🔶 STUB inference: generating mock predictions for %d faces", num_faces
-        )
-        num_classes = len(config.ACTIVE_CLASS_MAP)
-        return [i % num_classes for i in range(num_faces)]
+        raise RuntimeError("Model is not loaded for inference.")
 
     # ── Real inference ────────────────────────────────────────────────────
     with torch.no_grad():
@@ -160,7 +145,7 @@ def run_inference(graph: "dgl.DGLGraph") -> list[int]:
         graph.edata["x"] = graph.edata["x"].permute(0, 2, 1).float()
 
         logits = model(graph)  # [total_nodes, num_classes]
-        logger.info("Raw logits per face:\n%s", logits.cpu().numpy())
+        logger.debug("Raw logits per face:\n%s", logits.cpu().numpy())
 
         if not torch.isfinite(logits).all():
             # If this ever fires, a face produced NaN/Inf features upstream

@@ -6,19 +6,16 @@
  */
 
 export const FEATURE_COLORS = {
-  // Canonical CAD features
-  'Fillet':                { hex: '#6c5ce7', rgb: [108, 92,  231], label: 'Fillet' },
-  'Chamfer':               { hex: '#e17055', rgb: [225, 112, 85],  label: 'Chamfer' },
-  'Plane':                 { hex: '#636e72', rgb: [99,  110, 114], label: 'Planar Face' },
-  'Cylinder':              { hex: '#00b894', rgb: [0,   184, 148], label: 'Cylindrical' },
-  'Cone':                  { hex: '#fdcb6e', rgb: [253, 203, 110], label: 'Conical' },
-  'Sphere':                { hex: '#00cec9', rgb: [0,   206, 201], label: 'Spherical' },
-  'Torus':                 { hex: '#e84393', rgb: [232, 67,  147], label: 'Toroidal' },
-  'Spline':                { hex: '#0984e3', rgb: [9,   132, 227], label: 'Spline / NURBS' },
-  'Revolution':            { hex: '#fd79a8', rgb: [253, 121, 168], label: 'Revolution' },
-  'Extrusion':             { hex: '#55efc4', rgb: [85,  239, 196], label: 'Extrusion' },
-  'BSpline':               { hex: '#74b9ff', rgb: [116, 185, 255], label: 'B-Spline' },
-  'Other':                 { hex: '#dfe6e9', rgb: [223, 230, 233], label: 'Other / Unknown' },
+  // Fusion 360 Gallery Operation Features
+  'Extrude Side': { hex: '#55efc4', rgb: [85, 239, 196], label: 'Extrude Side' },
+  'Extrude End': { hex: '#00b894', rgb: [0, 184, 148], label: 'Extrude End' },
+  'Cut Side': { hex: '#fab1a0', rgb: [250, 177, 160], label: 'Cut Side' },
+  'Cut End': { hex: '#e17055', rgb: [225, 112, 85], label: 'Cut End' },
+  'Fillet': { hex: '#6c5ce7', rgb: [108, 92, 231], label: 'Fillet' },
+  'Chamfer': { hex: '#fdcb6e', rgb: [253, 203, 110], label: 'Chamfer' },
+  'Revolve': { hex: '#fd79a8', rgb: [253, 121, 168], label: 'Revolve' },
+  'Stock': { hex: '#dfe6e9', rgb: [223, 230, 233], label: 'Stock' },
+  'Other': { hex: '#636e72', rgb: [99, 110, 114], label: 'Other' },
 };
 
 /**

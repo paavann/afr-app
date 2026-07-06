@@ -8,18 +8,18 @@
 // Mock predictions — each entry corresponds to a face index in the STL mesh.
 // These simulate the UV-Net inference output for a sample mechanical part.
 export const MOCK_PREDICTIONS = [
-  'Plane', 'Plane', 'Plane', 'Plane', 'Plane', 'Plane',
-  'Cylinder', 'Cylinder', 'Cylinder', 'Cylinder',
+  'Extrude Side', 'Extrude Side', 'Extrude Side', 'Extrude Side', 'Extrude Side', 'Extrude Side',
+  'Extrude End', 'Extrude End', 'Extrude End', 'Extrude End',
   'Fillet', 'Fillet', 'Fillet', 'Fillet', 'Fillet', 'Fillet',
   'Fillet', 'Fillet',
   'Chamfer', 'Chamfer', 'Chamfer',
-  'Cone', 'Cone',
-  'Sphere', 'Sphere',
-  'Torus',
-  'Extrusion', 'Extrusion', 'Extrusion', 'Extrusion',
-  'BSpline', 'BSpline',
-  'Revolution',
-  'Spline', 'Spline',
+  'Cut Side', 'Cut Side',
+  'Cut End', 'Cut End',
+  'Revolve',
+  'Stock', 'Stock', 'Stock', 'Stock',
+  'Other', 'Other',
+  'Extrude Side',
+  'Extrude End', 'Cut Side',
   'Other',
 ];
 

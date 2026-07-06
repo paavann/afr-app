@@ -4,21 +4,15 @@ import logging
 import pathlib
 from typing import TYPE_CHECKING
 
-try:
-    import dgl
-    import numpy as np
-    import torch
-    import trimesh
-    from occwl.compound import Compound
-    from occwl.entity_mapper import EntityMapper
-    from occwl.graph import face_adjacency
-    from occwl.io import load_step
-    from occwl.uvgrid import ugrid, uvgrid
-    PIPELINE_AVAILABLE = True
-except Exception as e:
-    import logging
-    logging.warning(f"Pipeline dependencies not available: {e}")
-    PIPELINE_AVAILABLE = False
+import dgl
+import numpy as np
+import torch
+import trimesh
+from occwl.compound import Compound
+from occwl.entity_mapper import EntityMapper
+from occwl.graph import face_adjacency
+from occwl.io import load_step
+from occwl.uvgrid import ugrid, uvgrid
 
 if TYPE_CHECKING:
     from dgl import DGLGraph
@@ -43,20 +37,7 @@ def build_face_adjacency_graph(
     surf_u: int = SURF_NUM_U_SAMPLES,
     surf_v: int = SURF_NUM_V_SAMPLES,
 ) -> DGLGraph:
-    if not PIPELINE_AVAILABLE:
-        logger.warning("Pipeline dependencies not found. Returning a mock DGL graph.")
-        class MockTensor:
-            def permute(self, *args): return self
-            def float(self): return self
-
-        class MockGraph:
-            def __init__(self):
-                self.ndata = {"x": MockTensor()}
-                self.edata = {"x": MockTensor()}
-            def num_nodes(self): return 10
-            def num_edges(self): return 20
-            def to(self, device): return self
-        return MockGraph()
+    # No mock graph, fail directly if there's an issue with loading (which is now handled by ImportError at module level)
 
     solids = load_step(str(step_path))
     if not solids:
@@ -112,16 +93,15 @@ def build_face_adjacency_graph(
     # checkpoint was trained on. Surface normals / curve tangents are unit
     # directions and are unaffected by translation or uniform scale, so they
     # are left untouched.
-    all_pts = np.concatenate(
-        [p.reshape(-1, 3) for p in face_points]
-        + [p.reshape(-1, 3) for p in edge_points],
+    inside_pts = np.concatenate(
+        [p[np.squeeze(m) == 1].reshape(-1, 3) for p, m in zip(face_points, face_masks)],
         axis=0,
     )
-    bbox_min = np.nanmin(all_pts, axis=0)
-    bbox_max = np.nanmax(all_pts, axis=0)
-    center = (bbox_min + bbox_max) / 2.0
-    extent = float(np.nanmax(bbox_max - bbox_min))
-    scale = 2.0 / extent if extent > 1e-9 else 1.0
+    bbox_min = inside_pts.min(axis=0)
+    bbox_max = inside_pts.max(axis=0)
+    diag = bbox_max - bbox_min
+    scale = 2.0 / float(np.max(diag)) if float(np.max(diag)) > 1e-9 else 1.0
+    center = 0.5 * (bbox_min + bbox_max)
 
     graph_face_feat = [
         np.concatenate(
@@ -145,16 +125,12 @@ def build_face_adjacency_graph(
     # any neighbor signal at all during graph convolution.
     src = [e[0] for e in valid_edges]
     dst = [e[1] for e in valid_edges]
-    full_src = src + dst
-    full_dst = dst + src
-    # Same physical B-rep edge, same features, duplicated for both directions.
-    full_edge_feat = graph_edge_feat + graph_edge_feat
 
-    dgl_graph = dgl.graph((full_src, full_dst), num_nodes=len(graph.nodes))
+    dgl_graph = dgl.graph((src, dst), num_nodes=len(graph.nodes))
 
     ndata = torch.from_numpy(graph_face_feat_arr).float()
-    if full_edge_feat:
-        edata = torch.from_numpy(np.asarray(full_edge_feat)).float()
+    if graph_edge_feat:
+        edata = torch.from_numpy(np.asarray(graph_edge_feat)).float()
     else:
         # No curved edges at all (unusual, but keep the tensor shape sane
         # for downstream code that always expects ndata/edata['x']).
@@ -195,10 +171,7 @@ def build_face_adjacency_graph(
 def save_graph(dgl_graph: DGLGraph, output_path: pathlib.Path) -> pathlib.Path:
     """Persist a DGL graph to disk as a .bin file."""
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    if not PIPELINE_AVAILABLE:
-        output_path.write_bytes(b"mock graph data")
-    else:
-        dgl.data.utils.save_graphs(str(output_path), [dgl_graph])
+    dgl.data.utils.save_graphs(str(output_path), [dgl_graph])
     logger.info("Saved graph → %s", output_path)
     return output_path
 
@@ -210,13 +183,7 @@ def build_render_mesh(
     triangle_face_tol: float = TRIANGLE_FACE_TOL,
     angle_tol_rads: float = ANGLE_TOL_RADS,
 ) -> pathlib.Path:
-    if not PIPELINE_AVAILABLE:
-        logger.warning("Pipeline dependencies not found. Generating a mock STL.")
-        output_stl_path.parent.mkdir(parents=True, exist_ok=True)
-        # Write a minimal valid ASCII STL file for testing
-        mock_stl = "solid mock\n  facet normal 0 0 1\n    outer loop\n      vertex 0 0 0\n      vertex 1 0 0\n      vertex 0 1 0\n    endloop\n  endfacet\nendsolid mock\n"
-        output_stl_path.write_text(mock_stl)
-        return output_stl_path, None
+    # No mock STL, pipeline is assumed to be available
 
     solid = Compound.load_from_step(str(step_path))
     verts, tris, tri_mapping = _triangulate_with_face_mapping(
