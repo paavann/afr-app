@@ -17,6 +17,9 @@ class PredictionResponse(BaseModel):
         ..., description="Per-face feature predictions"
     )
     num_faces: int = Field(..., description="Total number of B-rep faces detected")
+    face_mapping: list[int] | None = Field(
+        default=None, description="Triangle-to-face mapping: face_mapping[tri_idx] = face_id"
+    )
 
 
 class ErrorResponse(BaseModel):

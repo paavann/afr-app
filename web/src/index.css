@@ -20,7 +20,7 @@
   --color-warning: #fdcb6e;
   --color-error: #e17055;
 
-  --font-sans: "Inter", system-ui, -apple-system, sans-serif;
+  --font-sans: "JetBrains Mono", "Fira Code", monospace;
   --font-mono: "JetBrains Mono", "Fira Code", monospace;
 }
 
@@ -36,7 +36,8 @@ html {
 }
 
 body {
-  font-family: var(--font-sans);
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
   background-color: var(--color-dark-900);
   color: var(--color-dark-100);
   min-height: 100vh;
@@ -60,7 +61,6 @@ body {
 }
 ::-webkit-scrollbar-thumb {
   background: var(--color-dark-400);
-  border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
   background: var(--color-dark-300);
@@ -147,7 +147,6 @@ body {
 /* === Canvas Container === */
 .viewport-canvas canvas {
   outline: none !important;
-  border-radius: 12px;
 }
 
 /* === Drag Active State === */

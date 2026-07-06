@@ -8,11 +8,11 @@ export default function FeatureLegend({ predictions, fileInfo, onReset }) {
   const totalFaces = predictions.length;
 
   return (
-    <div className="glass rounded-2xl p-5 w-full max-w-[300px] animate-fade-in-up flex flex-col gap-4 max-h-[calc(100vh-140px)] overflow-y-auto">
+    <div className="glass rounded-none p-6 w-full max-w-[300px] animate-fade-in-up flex flex-col gap-4 max-h-[calc(100vh-140px)] overflow-y-auto">
       {/* Panel header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-accent-primary/30 to-accent-bright/15 flex items-center justify-center">
+          <div className="w-7 h-7 rounded-none bg-gradient-to-br from-accent-primary/30 to-accent-bright/15 flex items-center justify-center">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-accent-secondary">
               <rect x="3" y="3" width="7" height="7" />
               <rect x="14" y="3" width="7" height="7" />
@@ -25,7 +25,7 @@ export default function FeatureLegend({ predictions, fileInfo, onReset }) {
         {onReset && (
           <button
             onClick={onReset}
-            className="text-[11px] text-dark-300 hover:text-error transition-colors px-2 py-1 rounded-md hover:bg-red-500/10 cursor-pointer"
+            className="text-[11px] text-dark-300 hover:text-error transition-colors px-2 py-1 rounded-none hover:bg-red-500/10 cursor-pointer"
           >
             Reset
           </button>
@@ -39,11 +39,11 @@ export default function FeatureLegend({ predictions, fileInfo, onReset }) {
           return (
             <div
               key={feature.label}
-              className="group flex items-center gap-3 px-3 py-2.5 rounded-xl bg-dark-700/40 hover:bg-dark-600/60 transition-all duration-200 border border-transparent hover:border-dark-500/30"
+              className="group flex items-center gap-3 p-3 rounded-none bg-dark-700/40 hover:bg-dark-600/60 transition-all duration-200 border border-transparent hover:border-dark-500/30"
             >
               {/* Color swatch */}
               <div
-                className="w-3.5 h-3.5 rounded-md flex-shrink-0 shadow-sm"
+                className="w-3.5 h-3.5 rounded-none flex-shrink-0 shadow-sm"
                 style={{ backgroundColor: feature.hex }}
               />
 
@@ -58,9 +58,9 @@ export default function FeatureLegend({ predictions, fileInfo, onReset }) {
               </div>
 
               {/* Mini bar */}
-              <div className="w-12 h-1 rounded-full bg-dark-600 overflow-hidden flex-shrink-0">
+              <div className="w-12 h-1 rounded-none bg-dark-600 overflow-hidden flex-shrink-0">
                 <div
-                  className="h-full rounded-full transition-all duration-500"
+                  className="h-full rounded-none transition-all duration-500"
                   style={{
                     width: `${percentage}%`,
                     backgroundColor: feature.hex,
@@ -90,7 +90,7 @@ export default function FeatureLegend({ predictions, fileInfo, onReset }) {
               { label: 'Model',    value: fileInfo.model_version },
               { label: 'Confidence', value: `${(fileInfo.confidence * 100).toFixed(0)}%` },
             ].map(item => (
-              <div key={item.label} className="flex flex-col px-2.5 py-2 rounded-lg bg-dark-700/30">
+              <div key={item.label} className="flex flex-col p-3 rounded-none bg-dark-700/30">
                 <span className="text-[10px] text-dark-300 uppercase tracking-wider">{item.label}</span>
                 <span className="text-xs text-dark-100 font-mono font-medium">{item.value}</span>
               </div>

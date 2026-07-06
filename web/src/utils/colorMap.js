@@ -38,10 +38,35 @@ const EXTENDED_PALETTE = [
  * @returns {{ hex: string, rgb: number[], label: string }}
  */
 export function getFeatureColor(classId) {
-  // String lookup
+  // String lookup (case-insensitive)
   if (typeof classId === 'string') {
-    const match = FEATURE_COLORS[classId];
-    if (match) return match;
+    // Direct match first
+    const directMatch = FEATURE_COLORS[classId];
+    if (directMatch) return directMatch;
+
+    // Case-insensitive match
+    const normalizedId = classId.toLowerCase();
+    for (const [key, value] of Object.entries(FEATURE_COLORS)) {
+      if (key.toLowerCase() === normalizedId) return value;
+    }
+
+    // Try matching partial / underscore-separated names (e.g., 'rectangular_through_slot')
+    const readable = classId.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+    const partialMatch = FEATURE_COLORS[readable];
+    if (partialMatch) return partialMatch;
+
+    // If unrecognized, pick a consistent color from EXTENDED_PALETTE based on string hash
+    let hash = 0;
+    for (let i = 0; i < classId.length; i++) {
+      hash = classId.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const extIdx = Math.abs(hash) % EXTENDED_PALETTE.length;
+    const hex = EXTENDED_PALETTE[extIdx];
+    return {
+      hex,
+      rgb: hexToRgb(hex),
+      label: classId.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
+    };
   }
 
   // Numeric index → ordered feature keys

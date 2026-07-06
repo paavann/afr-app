@@ -46,11 +46,11 @@ export default function LoadingOverlay({ progress, stage }) {
         {/* Spinner ring */}
         <div className="relative w-24 h-24">
           {/* Outer ring */}
-          <div className="absolute inset-0 rounded-full border-2 border-dark-500/30" />
+          <div className="absolute inset-0 rounded-none border-2 border-dark-500/30" />
           {/* Spinning arc */}
-          <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-accent-primary border-r-accent-bright animate-spin-slow" />
+          <div className="absolute inset-0 rounded-none border-2 border-transparent border-t-accent-primary border-r-accent-bright animate-spin-slow" />
           {/* Inner glow */}
-          <div className="absolute inset-3 rounded-full bg-gradient-to-br from-accent-primary/10 to-accent-bright/5 flex items-center justify-center">
+          <div className="absolute inset-3 rounded-none bg-gradient-to-br from-accent-primary/10 to-accent-bright/5 flex items-center justify-center">
             <span className="text-2xl" role="img" aria-label={activeStage.label}>
               {activeStage.icon}
             </span>
@@ -70,9 +70,9 @@ export default function LoadingOverlay({ progress, stage }) {
         </div>
 
         {/* Progress bar */}
-        <div className="w-72 h-1.5 rounded-full bg-dark-600 overflow-hidden">
+        <div className="w-72 h-1.5 rounded-none bg-dark-600 overflow-hidden">
           <div
-            className="h-full rounded-full bg-gradient-to-r from-accent-primary to-accent-bright transition-all duration-500 ease-out"
+            className="h-full rounded-none bg-gradient-to-r from-accent-primary to-accent-bright transition-all duration-500 ease-out"
             style={{
               width: progress
                 ? `${progress}%`

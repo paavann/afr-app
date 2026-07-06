@@ -54,7 +54,7 @@ export default function UploadZone({ onFileSelect, disabled }) {
   };
 
   return (
-    <div className="w-full max-w-2xl mx-auto animate-fade-in-up">
+    <div className="w-full max-w-2xl mx-auto animate-fade-in-up p-40">
       <div
         onClick={handleClick}
         onDragOver={handleDragOver}
@@ -62,9 +62,9 @@ export default function UploadZone({ onFileSelect, disabled }) {
         onDrop={handleDrop}
         className={`
           relative group cursor-pointer
-          rounded-2xl border-2 border-dashed
+          rounded-none border-2 border-dashed
           transition-all duration-300 ease-out
-          px-8 py-14
+          p-12
           ${isDragging
             ? 'drag-active'
             : 'border-dark-400/60 hover:border-accent-primary/50 hover:bg-dark-700/30'
@@ -73,14 +73,14 @@ export default function UploadZone({ onFileSelect, disabled }) {
         `}
       >
         {/* Shimmer overlay on hover */}
-        <div className="absolute inset-0 rounded-2xl overflow-hidden opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+        <div className="absolute inset-0 rounded-none overflow-hidden opacity-0 group-hover:opacity-100 transition-opacity duration-500">
           <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/[0.02] to-transparent animate-shimmer" />
         </div>
 
-        <div className="relative flex flex-col items-center gap-5 text-center">
+        <div className="relative flex flex-col items-center gap-5 text-center" style={{ padding: "12px" }}>
           {/* Upload icon */}
           <div className={`
-            w-16 h-16 rounded-2xl flex items-center justify-center
+            w-16 h-16 rounded-none flex items-center justify-center
             bg-gradient-to-br from-accent-primary/20 to-accent-bright/10
             border border-accent-primary/20
             transition-transform duration-300
@@ -96,7 +96,7 @@ export default function UploadZone({ onFileSelect, disabled }) {
 
           {/* Text */}
           <div>
-            <p className="text-base font-medium text-white mb-1">
+            <p className="text-base font-medium text-white mb-1 p-2">
               {isDragging ? 'Drop your STEP file here' : 'Upload CAD File'}
             </p>
             <p className="text-sm text-dark-200">
@@ -111,7 +111,7 @@ export default function UploadZone({ onFileSelect, disabled }) {
             {['.STEP', '.STP'].map(ext => (
               <span
                 key={ext}
-                className="px-2.5 py-1 rounded-md bg-dark-600/80 text-[11px] font-mono text-dark-200 border border-dark-500/50"
+                className="px-2.5 py-1 rounded-none bg-dark-600/80 text-[11px] font-mono text-dark-200 border border-dark-500/50"
               >
                 {ext}
               </span>
@@ -119,11 +119,11 @@ export default function UploadZone({ onFileSelect, disabled }) {
           </div>
 
           {/* Mock data button */}
-          <button
+          {/* <button
             type="button"
             onClick={handleLoadMock}
             className="
-              mt-2 px-4 py-2 rounded-lg
+              mt-2 px-4 py-2 rounded-none
               text-xs font-medium
               bg-dark-600/60 text-dark-200
               border border-dark-500/40
@@ -133,7 +133,7 @@ export default function UploadZone({ onFileSelect, disabled }) {
             "
           >
             ⚡ Load Demo Data (No Backend)
-          </button>
+          </button> */}
         </div>
       </div>
     </div>

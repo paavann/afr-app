@@ -53,6 +53,12 @@ MFCAD_CLASS_MAP: dict[int, str] = {
 }
 
 # Simplified / generic class map (for broader B-rep surface type labelling)
+# NOTE: kept for reference only. This taxonomy is NOT well-posed for
+# fillet/chamfer recognition: a fillet IS a cylindrical/toroidal surface,
+# and a chamfer IS a planar surface, so asking a classifier to separate
+# "cylinder" from "fillet" using that face's own geometry alone conflates
+# surface *type* with feature *semantics*. Prefer FEATURE_OPERATION_CLASS_MAP
+# below for real fillet/chamfer work.
 SURFACE_TYPE_CLASS_MAP: dict[int, str] = {
     0: "plane",
     1: "cylinder",
@@ -63,7 +69,31 @@ SURFACE_TYPE_CLASS_MAP: dict[int, str] = {
     6: "chamfer",
 }
 
-# Active class map — swap to SURFACE_TYPE_CLASS_MAP if using a different model
+# CAD-operation-based labels, mirroring the ASM-derived scheme the UV-Net
+# paper uses on the ABC dataset (Appendix A.3.4). This encodes *why* a face
+# exists (which modeling operation produced it) rather than its raw
+# primitive type, which is what actually lets "fillet" be distinguished
+# from a generic cylinder, and "chamfer" from a generic plane.
+#
+# IMPORTANT: swapping this dict alone does NOT fix model accuracy — it only
+# changes how predicted class indices are *displayed*. Your checkpoint must
+# actually be trained (or fine-tuned) against ground-truth labels drawn
+# from this same taxonomy, generated e.g. via a CAD kernel's rule-based
+# operation classifier (see paper Appendix A.3.4 for the exact recipe).
+FEATURE_OPERATION_CLASS_MAP: dict[int, str] = {
+    0: "extrude_side",
+    1: "extrude_end",
+    2: "cut_side",
+    3: "cut_end",
+    4: "fillet",
+    5: "chamfer",
+    6: "revolve",
+    7: "stock",
+}
+
+# Active class map. MUST match, in order, the exact label space your
+# checkpoint's classifier head was trained against — index i here must mean
+# the same thing as class index i in the model's output logits.
 ACTIVE_CLASS_MAP: dict[int, str] = MFCAD_CLASS_MAP
 
 # Server

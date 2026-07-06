@@ -14,7 +14,17 @@ except ImportError:
 if TYPE_CHECKING:
     import dgl
 
-from config import ACTIVE_CLASS_MAP, CHECKPOINT_PATH
+import config
+from config import CHECKPOINT_PATH
+
+# NOTE: we deliberately do NOT do `from config import ACTIVE_CLASS_MAP` here.
+# That would bind a local name to whatever dict object config.ACTIVE_CLASS_MAP
+# pointed to at import time. `_load_model()` below sometimes reassigns
+# `config.ACTIVE_CLASS_MAP = {...}` at runtime (e.g. to auto-correct a
+# num_classes mismatch) — a locally-imported name would never see that
+# update, since `config.ACTIVE_CLASS_MAP = ...` rebinds the module
+# attribute, it does not mutate the dict a prior `from x import y` copied a
+# reference to. Always go through `config.ACTIVE_CLASS_MAP` at call time.
 
 logger = logging.getLogger(__name__)
 
@@ -43,10 +53,68 @@ def _load_model(checkpoint_path: Path | None = None) -> object:
         # Attempt to import the real UV-Net segmentation model
         from uvnet.models import Segmentation
 
-        _model = Segmentation.load_from_checkpoint(str(ckpt), map_location=_device)
+        # --- Try Lightning-style loading first ---
+        try:
+            _model = Segmentation.load_from_checkpoint(str(ckpt), map_location=_device)
+            logger.info("✅ Loaded UV-Net checkpoint (Lightning) from '%s' on %s", ckpt, _device)
+        except Exception as lightning_exc:
+            logger.warning(
+                "Lightning checkpoint loading failed (%s). Trying direct torch.load…",
+                lightning_exc,
+            )
+            # --- Fallback: manual torch.load ---
+            checkpoint = torch.load(str(ckpt), map_location=_device, weights_only=False)
+
+            # Auto-detect num_classes from checkpoint
+            hparams = checkpoint.get("hyper_parameters", checkpoint.get("hparams", {}))
+            state_dict = checkpoint.get("state_dict", checkpoint)
+
+            # Try to infer num_classes from the classifier's final linear layer
+            num_classes = hparams.get("num_classes", None)
+            if num_classes is None:
+                for key in state_dict:
+                    if "classifier.linear3.weight" in key or "linear3.weight" in key:
+                        num_classes = state_dict[key].shape[0]
+                        break
+            if num_classes is None:
+                num_classes = len(config.ACTIVE_CLASS_MAP)
+                logger.warning(
+                    "Could not detect num_classes from checkpoint; defaulting to %d",
+                    num_classes,
+                )
+
+            # Dynamically update ACTIVE_CLASS_MAP if num_classes differs.
+            # This now actually takes effect everywhere, since run_inference()
+            # and map_predictions() below read config.ACTIVE_CLASS_MAP at call
+            # time instead of holding a stale imported reference.
+            if num_classes != len(config.ACTIVE_CLASS_MAP):
+                logger.warning(
+                    "Checkpoint num_classes=%d differs from ACTIVE_CLASS_MAP (%d entries). "
+                    "Generating generic class labels.",
+                    num_classes,
+                    len(config.ACTIVE_CLASS_MAP),
+                )
+                config.ACTIVE_CLASS_MAP = {
+                    i: config.ACTIVE_CLASS_MAP.get(i, f"class_{i}")
+                    for i in range(num_classes)
+                }
+
+            # Build model and load weights
+            model_kwargs = {k: v for k, v in hparams.items() if k not in ("num_classes", "lr")}
+            _model = Segmentation(num_classes=num_classes, **model_kwargs)
+
+            # Clean up state dict keys (strip Lightning prefixes)
+            cleaned = {}
+            for k, v in state_dict.items():
+                new_key = k.replace("model.model.", "model.").replace("module.", "")
+                cleaned[new_key] = v
+            _model.load_state_dict(cleaned, strict=False)
+            logger.info("✅ Loaded UV-Net checkpoint (torch.load fallback, num_classes=%d)", num_classes)
+
         _model.eval()
-        _model.to(_device)
-        logger.info("✅ Loaded UV-Net checkpoint from '%s' on %s", ckpt, _device)
+        if hasattr(_model, "to"):
+            _model.to(_device)
+
     except ImportError:
         logger.warning(
             "Could not import 'uvnet.models.Segmentation'. "
@@ -79,7 +147,7 @@ def run_inference(graph: "dgl.DGLGraph") -> list[int]:
         logger.info(
             "🔶 STUB inference: generating mock predictions for %d faces", num_faces
         )
-        num_classes = len(ACTIVE_CLASS_MAP)
+        num_classes = len(config.ACTIVE_CLASS_MAP)
         return [i % num_classes for i in range(num_faces)]
 
     # ── Real inference ────────────────────────────────────────────────────
@@ -92,9 +160,23 @@ def run_inference(graph: "dgl.DGLGraph") -> list[int]:
         graph.edata["x"] = graph.edata["x"].permute(0, 2, 1).float()
 
         logits = model(graph)  # [total_nodes, num_classes]
-        preds = torch.argmax(F.softmax(logits, dim=-1), dim=-1)
+        logger.info("Raw logits per face:\n%s", logits.cpu().numpy())
+
+        if not torch.isfinite(logits).all():
+            # If this ever fires, a face produced NaN/Inf features upstream
+            # (degenerate uvgrid sample, e.g. a surface pole) and it has
+            # propagated through message passing into other faces' logits.
+            # pipeline.py now sanitizes ndata/edata for this, but this check
+            # is left in place so a regression shows up in the logs instead
+            # of as a silent all-one-class collapse.
+            logger.error(
+                "Non-finite values detected in model logits — predictions "
+                "may be unreliable. Check pipeline.py's NaN sanitization."
+            )
+
+        preds = torch.argmax(logits, dim=-1)  # softmax doesn't change argmax
         preds_list = preds.cpu().tolist()
-        print(f"[INFO] Final Predictions: {preds_list}")
+        logger.debug("Final predictions: %s", preds_list)
         return preds_list
 
 
@@ -103,7 +185,7 @@ def map_predictions(class_indices: list[int]) -> list[dict]:
     return [
         {
             "face_id": idx,
-            "type": ACTIVE_CLASS_MAP.get(cls, f"unknown_{cls}"),
+            "type": config.ACTIVE_CLASS_MAP.get(cls, f"unknown_{cls}"),
         }
         for idx, cls in enumerate(class_indices)
     ]

@@ -126,7 +126,7 @@ async def predict_cad(request: Request, file: UploadFile = File(...)):
 
         logger.info("🔧 Building render mesh…")
         try:
-            build_render_mesh(upload_path, stl_path)
+            stl_path_out, tri_mapping = build_render_mesh(upload_path, stl_path)
         except ValueError as exc:
             raise HTTPException(status_code=422, detail=str(exc))
         except Exception as exc:
@@ -155,6 +155,7 @@ async def predict_cad(request: Request, file: UploadFile = File(...)):
             mesh_url=mesh_url,
             predictions=[FacePrediction(**p) for p in predictions],
             num_faces=len(predictions),
+            face_mapping=tri_mapping.tolist() if tri_mapping is not None else None,
         )
 
     except HTTPException:

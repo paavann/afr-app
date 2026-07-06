@@ -26,6 +26,7 @@ export default function App() {
   const [stlData, setStlData] = useState(null);
   const [fileInfo, setFileInfo] = useState(null);
   const [errorMsg, setErrorMsg] = useState(null);
+  const [faceMapping, setFaceMapping] = useState(null);
 
   /**
    * Handle file selection (or null for mock data).
@@ -71,6 +72,10 @@ export default function App() {
       setPredictions(response.data?.predictions || response.predictions);
       setFileInfo(response.data?.file_info || response.file_info);
 
+      // Get face mapping for colored rendering
+      const mapping = response.data?.face_mapping || response.face_mapping;
+      setFaceMapping(mapping || null);
+
       // Fetch STL if URL is provided
       const stlUrl = response.data?.mesh_url || response.mesh_url;
       if (stlUrl) {
@@ -93,7 +98,7 @@ export default function App() {
 
       // Auto-recover after 5s
       setTimeout(() => {
-        if (status === 'error') setStatus('idle');
+        setStatus(prev => prev === 'error' ? 'idle' : prev);
       }, 5000);
     }
   }, []);
@@ -108,6 +113,7 @@ export default function App() {
     setStlData(null);
     setFileInfo(null);
     setErrorMsg(null);
+    setFaceMapping(null);
     setProgress(0);
     setLoadingStage(undefined);
   }, []);
@@ -138,10 +144,10 @@ export default function App() {
                   CAD Models
                 </span>
               </h2>
-              <p className="text-dark-200 text-base sm:text-lg leading-relaxed">
+              {/* <p className="text-dark-200 text-base sm:text-lg leading-relaxed">
                 Upload a STEP file and let UV-Net identify fillets, chamfers,
                 cylinders, and other geometric features with AI-powered inference.
-              </p>
+              </p> */}
             </div>
 
             {/* Upload zone */}
@@ -152,17 +158,17 @@ export default function App() {
 
             {/* Error message */}
             {errorMsg && (
-              <div className="animate-fade-in-up max-w-lg w-full px-4 py-3 rounded-xl bg-red-500/10 border border-red-500/20 text-sm text-red-300 text-center">
+              <div className="animate-fade-in-up max-w-lg w-full px-4 py-3 rounded-none bg-red-500/10 border border-red-500/20 text-sm text-red-300 text-center">
                 <span className="font-medium">⚠ Error:</span> {errorMsg}
               </div>
             )}
 
             {/* Feature chips */}
-            <div className="flex flex-wrap gap-2 justify-center mt-4 animate-fade-in-up" style={{ animationDelay: '0.3s' }}>
+            <div className="flex flex-wrap gap-2 justify-center animate-fade-in-up" style={{ animationDelay: '0.3s' }}>
               {['Fillet Detection', 'Chamfer Analysis', 'Surface Classification', 'GPU Inference', 'B-Rep Segmentation'].map(tag => (
                 <span
                   key={tag}
-                  className="px-3 py-1.5 rounded-full text-[11px] font-medium bg-dark-700/50 text-dark-200 border border-dark-500/30"
+                  className="px-3 py-1.5 rounded-none text-[11px] font-medium bg-dark-700/50 text-dark-200 border border-dark-500/30"
                 >
                   {tag}
                 </span>
@@ -176,7 +182,7 @@ export default function App() {
           <div className="flex-1 flex relative">
             {/* 3D Canvas — fills remaining space */}
             <div className="flex-1 min-h-[500px] p-3">
-              <Viewport3D stlData={stlData} predictions={predictions} />
+              <Viewport3D stlData={stlData} predictions={predictions} faceMapping={faceMapping} />
             </div>
 
             {/* Legend panel — overlaid on the right */}
@@ -191,8 +197,8 @@ export default function App() {
             {/* Mode badge */}
             {status === 'mock' && (
               <div className="absolute bottom-5 left-1/2 -translate-x-1/2 z-10">
-                <div className="glass-light px-4 py-2 rounded-full text-xs font-medium text-accent-secondary flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-purple-400 animate-pulse" />
+                <div className="glass-light px-4 py-2 rounded-none text-xs font-medium text-accent-secondary flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-none bg-purple-400 animate-pulse" />
                   Demo Mode — Using procedural geometry
                 </div>
               </div>
