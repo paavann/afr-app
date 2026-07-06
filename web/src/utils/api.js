@@ -18,7 +18,7 @@ export async function predictCAD(file, onProgress) {
   const formData = new FormData();
   formData.append('file', file);
 
-  const response = await apiClient.post('/api/predict-cad', formData, {
+  const response = await apiClient.post('/api/afr', formData, {
     headers: {
       'Content-Type': 'multipart/form-data',
     },
