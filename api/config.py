@@ -1,62 +1,38 @@
-"""
-Centralized configuration for the CAD Segmentation Inference API.
-
-All paths, model parameters, CORS origins, and class mappings are defined here
-to keep the rest of the codebase clean and environment-portable.
-"""
-
 import os
 from pathlib import Path
 
-# ---------------------------------------------------------------------------
-# Directory paths
-# ---------------------------------------------------------------------------
-BASE_DIR = Path(__file__).resolve().parent
 
+
+BASE_DIR = Path(__file__).resolve().parent
 UPLOAD_DIR = Path(os.getenv("UPLOAD_DIR", "/tmp/uploads"))
 GRAPH_DIR = Path(os.getenv("GRAPH_DIR", "/tmp/graphs"))
 MESH_DIR = Path(os.getenv("MESH_DIR", "/tmp/meshes"))
 STATIC_DIR = Path(os.getenv("STATIC_DIR", "/tmp/static"))
 
-# Ensure all working directories exist at import time
 for _d in (UPLOAD_DIR, GRAPH_DIR, MESH_DIR, STATIC_DIR):
     _d.mkdir(parents=True, exist_ok=True)
 
-# ---------------------------------------------------------------------------
-# Model checkpoint
-# ---------------------------------------------------------------------------
 CHECKPOINT_PATH = Path(
     os.getenv("CHECKPOINT_PATH", str(BASE_DIR / "checkpoints" / "best.ckpt"))
 )
 
-# ---------------------------------------------------------------------------
-# UV-grid sampling parameters (must match training config)
-# ---------------------------------------------------------------------------
+
+
 CURV_NUM_U_SAMPLES: int = 10
 SURF_NUM_U_SAMPLES: int = 10
 SURF_NUM_V_SAMPLES: int = 10
 
-# ---------------------------------------------------------------------------
+
 # Mesh triangulation tolerances
-# ---------------------------------------------------------------------------
 TRIANGLE_FACE_TOL: float = 0.01
 ANGLE_TOL_RADS: float = 0.1
 
-# ---------------------------------------------------------------------------
-# CORS — allowed frontend origins
-# ---------------------------------------------------------------------------
-CORS_ORIGINS: list[str] = [
-    "http://localhost:3000",
-    "http://localhost:5173",
-    "http://127.0.0.1:3000",
-    "http://127.0.0.1:5173",
-]
 
-# ---------------------------------------------------------------------------
+CORS_ORIGINS: list[str] = [ "*" ]
+
 # MFCAD class map — 16 machining feature classes
 # Maps predicted class index → human-readable feature name.
 # Source: MFCAD dataset (Cao et al., 2020)
-# ---------------------------------------------------------------------------
 MFCAD_CLASS_MAP: dict[int, str] = {
     0: "rectangular_through_slot",
     1: "triangular_through_slot",
@@ -88,10 +64,8 @@ SURFACE_TYPE_CLASS_MAP: dict[int, str] = {
 }
 
 # Active class map — swap to SURFACE_TYPE_CLASS_MAP if using a different model
-ACTIVE_CLASS_MAP: dict[int, str] = MFCAD_CLASS_MAP
+ACTIVE_CLASS_MAP: dict[int, str] = SURFACE_TYPE_CLASS_MAP
 
-# ---------------------------------------------------------------------------
 # Server
-# ---------------------------------------------------------------------------
 API_HOST: str = os.getenv("API_HOST", "0.0.0.0")
 API_PORT: int = int(os.getenv("API_PORT", "8000"))

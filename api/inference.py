@@ -1,11 +1,3 @@
-"""
-UV-Net model inference service — loads the PyTorch Lightning checkpoint
-and runs face-level segmentation on a DGL graph.
-
-This module is intentionally decoupled from the HTTP layer so it can be
-unit-tested and swapped independently.
-"""
-
 from __future__ import annotations
 
 import logging
@@ -26,24 +18,14 @@ from config import ACTIVE_CLASS_MAP, CHECKPOINT_PATH
 
 logger = logging.getLogger(__name__)
 
-# ---------------------------------------------------------------------------
-# Module-level singleton — the model is loaded once and reused across requests.
-# ---------------------------------------------------------------------------
 _model: object | None = None
 _device = torch.device("cuda" if torch.cuda.is_available() else "cpu") if TORCH_AVAILABLE else None
 
 
+
+
+
 def _load_model(checkpoint_path: Path | None = None) -> object:
-    """
-    Load the UV-Net Segmentation model from a PyTorch Lightning checkpoint.
-
-    Returns the ``Segmentation`` LightningModule in eval mode, moved to the
-    appropriate device (GPU when available, otherwise CPU).
-
-    NOTE: This requires the ``uvnet`` package and its ``models.Segmentation``
-    class to be importable. When running without the full UV-Net repo on the
-    Python path, the stub fallback below is used instead.
-    """
     global _model
 
     ckpt = checkpoint_path or CHECKPOINT_PATH
@@ -78,31 +60,16 @@ def _load_model(checkpoint_path: Path | None = None) -> object:
     return _model
 
 
+
 def get_model():
-    """Return the cached model singleton, loading on first call."""
     global _model
     if _model is None:
         _load_model()
     return _model
 
 
-# ---------------------------------------------------------------------------
-# Inference
-# ---------------------------------------------------------------------------
-
 
 def run_inference(graph: "dgl.DGLGraph") -> list[int]:
-    """
-    Run segmentation inference on a single DGL face-adjacency graph.
-
-    Args:
-        graph: A DGL graph with ``ndata['x']`` (face UV-grids, shape
-               ``[num_faces, 10, 10, 7]``) and ``edata['x']`` (edge UV-grids,
-               shape ``[num_edges, 10, 6]``).
-
-    Returns:
-        A list of predicted class indices, one per face (node).
-    """
     model = get_model()
 
     if model is None:
@@ -131,13 +98,8 @@ def run_inference(graph: "dgl.DGLGraph") -> list[int]:
         return preds_list
 
 
-def map_predictions(class_indices: list[int]) -> list[dict]:
-    """
-    Convert raw predicted class indices into human-readable dicts.
 
-    Returns:
-        List of ``{"face_id": int, "type": str}`` dicts.
-    """
+def map_predictions(class_indices: list[int]) -> list[dict]:
     return [
         {
             "face_id": idx,

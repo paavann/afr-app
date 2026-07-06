@@ -1,16 +1,3 @@
-"""
-CAD processing pipeline — STEP → DGL graph + STL mesh.
-
-This module wraps the UV-Net `solid_to_graph` and `solid_to_rendermesh`
-processing logic as importable functions so the FastAPI endpoint can call
-them directly without shelling out to CLI scripts.
-
-Dependencies:
-  - occwl (OpenCascade wrapper)
-  - dgl   (Deep Graph Library)
-  - trimesh
-"""
-
 from __future__ import annotations
 
 import logging
@@ -47,9 +34,7 @@ from config import (
 logger = logging.getLogger(__name__)
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
-# 1. STEP → DGL Face-Adjacency Graph (.bin)
-# ═══════════════════════════════════════════════════════════════════════════════
+
 
 
 def build_face_adjacency_graph(
@@ -58,27 +43,8 @@ def build_face_adjacency_graph(
     surf_u: int = SURF_NUM_U_SAMPLES,
     surf_v: int = SURF_NUM_V_SAMPLES,
 ) -> DGLGraph:
-    """
-    Parse a STEP file and construct a DGL face-adjacency graph with UV-grid
-    node (face) and edge (curve) features — identical to UV-Net's
-    ``process.solid_to_graph.build_graph``.
-
-    Args:
-        step_path: Absolute path to the .step / .stp file.
-        curv_u:    Number of uniform samples along each edge curve.
-        surf_u:    Number of U-direction samples on each face surface.
-        surf_v:    Number of V-direction samples on each face surface.
-
-    Returns:
-        A DGL graph ready for UV-Net inference.
-
-    Raises:
-        ValueError: If the STEP file contains no parseable solids.
-        RuntimeError: If the OCC kernel fails during B-rep traversal.
-    """
     if not PIPELINE_AVAILABLE:
         logger.warning("Pipeline dependencies not found. Returning a mock DGL graph.")
-        # Return a simple mock object for testing
         class MockTensor:
             def permute(self, *args): return self
             def float(self): return self
@@ -100,10 +66,7 @@ def build_face_adjacency_graph(
         )
     solid = solids[0]
 
-    # Build networkx-based face adjacency graph via occwl
     graph = face_adjacency(solid)
-
-    # ------ Compute 2D UV-grids per face (node features) ------
     graph_face_feat: list[np.ndarray] = []
     for face_idx in graph.nodes:
         face = graph.nodes[face_idx]["face"]
@@ -118,7 +81,6 @@ def build_face_adjacency_graph(
         graph_face_feat.append(face_feat)
     graph_face_feat_arr = np.asarray(graph_face_feat)
 
-    # ------ Compute 1D U-grids per edge (edge features) ------
     graph_edge_feat: list[np.ndarray] = []
     for edge_idx in graph.edges:
         edge = graph.edges[edge_idx]["edge"]
@@ -130,7 +92,6 @@ def build_face_adjacency_graph(
         graph_edge_feat.append(edge_feat)
     graph_edge_feat_arr = np.asarray(graph_edge_feat)
 
-    # ------ Convert to DGL graph ------
     edges = list(graph.edges)
     src = [e[0] for e in edges]
     dst = [e[1] for e in edges]
@@ -158,10 +119,6 @@ def save_graph(dgl_graph: DGLGraph, output_path: pathlib.Path) -> pathlib.Path:
     return output_path
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
-# 2. STEP → STL Render Mesh
-# ═══════════════════════════════════════════════════════════════════════════════
-
 
 def build_render_mesh(
     step_path: pathlib.Path,
@@ -169,24 +126,6 @@ def build_render_mesh(
     triangle_face_tol: float = TRIANGLE_FACE_TOL,
     angle_tol_rads: float = ANGLE_TOL_RADS,
 ) -> pathlib.Path:
-    """
-    Triangulate a STEP solid and export an STL mesh file suitable for
-    Three.js rendering on the frontend.
-
-    This mirrors UV-Net's ``process.solid_to_rendermesh`` logic.
-
-    Args:
-        step_path:         Path to the input .step file.
-        output_stl_path:   Where to write the resulting .stl file.
-        triangle_face_tol: Mesh tolerance relative to each B-rep face.
-        angle_tol_rads:    Normal/tangent angle tolerance in radians.
-
-    Returns:
-        The path to the written .stl file.
-
-    Raises:
-        ValueError: If the solid produces no triangles.
-    """
     if not PIPELINE_AVAILABLE:
         logger.warning("Pipeline dependencies not found. Generating a mock STL.")
         output_stl_path.parent.mkdir(parents=True, exist_ok=True)
@@ -213,15 +152,12 @@ def build_render_mesh(
     return output_stl_path
 
 
+
 def _triangulate_with_face_mapping(
     solid,
     triangle_face_tol: float = 0.01,
     angle_tol_rads: float = 0.1,
 ) -> tuple[np.ndarray | None, np.ndarray | None, np.ndarray | None]:
-    """
-    Triangulate all faces of a solid and return vertices, triangles, and a
-    per-triangle → B-rep face index mapping.
-    """
     solid.triangulate_all_faces(
         triangle_face_tol=triangle_face_tol, angle_tol_rads=angle_tol_rads
     )
