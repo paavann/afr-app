@@ -51,9 +51,18 @@ export default function LoadingOverlay({ progress, stage }) {
           <div className="absolute inset-0 rounded-none border-2 border-transparent border-t-accent-primary border-r-accent-bright animate-spin-slow" />
           {/* Inner glow */}
           <div className="absolute inset-3 rounded-none bg-gradient-to-br from-accent-primary/10 to-accent-bright/5 flex items-center justify-center">
-            <span className="text-2xl" role="img" aria-label={activeStage.label}>
-              {activeStage.icon}
-            </span>
+            <svg
+              className="w-8 h-8 text-accent-primary drop-shadow-[0_0_8px_rgba(85,239,196,0.5)]"
+              viewBox="0 0 24 24"
+              fill="currentColor"
+              fillOpacity="0.2"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <polygon points="12 3 22 21 2 21" />
+            </svg>
           </div>
         </div>
 
