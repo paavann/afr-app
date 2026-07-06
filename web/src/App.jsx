@@ -72,7 +72,7 @@ export default function App() {
       setFileInfo(response.data?.file_info || response.file_info);
 
       // Fetch STL if URL is provided
-      const stlUrl = response.data?.stl_url || response.stl_url;
+      const stlUrl = response.data?.mesh_url || response.mesh_url;
       if (stlUrl) {
         setLoadingStage('segment');
         const stlBuffer = await fetchSTL(stlUrl);

@@ -1,31 +1,3 @@
-"""
-CAD Feature Recognition — FastAPI Inference Gateway
-====================================================
-
-Production-ready API server that accepts .step CAD files, processes them
-through the UV-Net pipeline (STEP → DGL graph → model inference), and
-returns per-face feature predictions alongside a downloadable .stl mesh.
-
-Usage:
-    uvicorn main:app --host 0.0.0.0 --port 8000 --reload
-
-Architecture:
-    ┌────────────┐   POST /api/predict-cad   ┌──────────────┐
-    │  React SPA │ ────────────────────────►  │   FastAPI     │
-    │ (3000/5173)│ ◄────────────────────────  │  (port 8000)  │
-    └────────────┘   JSON + mesh_url          └──────┬───────┘
-                                                     │
-                          ┌──────────────────────────┼──────────────────┐
-                          │                          │                  │
-                    ┌─────▼─────┐           ┌───────▼──────┐   ┌──────▼──────┐
-                    │ pipeline  │           │  inference   │   │  /static    │
-                    │ .py       │           │  .py         │   │  STL serve  │
-                    │           │           │              │   │             │
-                    │ STEP→Graph│           │ Graph→Preds  │   │ *.stl files │
-                    │ STEP→STL  │           │ (UV-Net)     │   │             │
-                    └───────────┘           └──────────────┘   └─────────────┘
-"""
-
 from __future__ import annotations
 
 import logging

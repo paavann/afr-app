@@ -28,7 +28,9 @@ try:
     from occwl.io import load_step
     from occwl.uvgrid import ugrid, uvgrid
     PIPELINE_AVAILABLE = True
-except ImportError:
+except Exception as e:
+    import logging
+    logging.warning(f"Pipeline dependencies not available: {e}")
     PIPELINE_AVAILABLE = False
 
 if TYPE_CHECKING:
@@ -77,9 +79,17 @@ def build_face_adjacency_graph(
     if not PIPELINE_AVAILABLE:
         logger.warning("Pipeline dependencies not found. Returning a mock DGL graph.")
         # Return a simple mock object for testing
+        class MockTensor:
+            def permute(self, *args): return self
+            def float(self): return self
+
         class MockGraph:
+            def __init__(self):
+                self.ndata = {"x": MockTensor()}
+                self.edata = {"x": MockTensor()}
             def num_nodes(self): return 10
             def num_edges(self): return 20
+            def to(self, device): return self
         return MockGraph()
 
     solids = load_step(str(step_path))

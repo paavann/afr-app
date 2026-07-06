@@ -126,7 +126,9 @@ def run_inference(graph: "dgl.DGLGraph") -> list[int]:
 
         logits = model(graph)  # [total_nodes, num_classes]
         preds = torch.argmax(F.softmax(logits, dim=-1), dim=-1)
-        return preds.cpu().tolist()
+        preds_list = preds.cpu().tolist()
+        print(f"[INFO] Final Predictions: {preds_list}")
+        return preds_list
 
 
 def map_predictions(class_indices: list[int]) -> list[dict]:
