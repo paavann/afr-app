@@ -20,6 +20,10 @@ class PredictionResponse(BaseModel):
     face_mapping: list[int] | None = Field(
         default=None, description="Triangle-to-face mapping: face_mapping[tri_idx] = face_id"
     )
+    model_type: str = Field(
+        default="fusiongallery",
+        description="Model type used for inference: 'fusiongallery' or 'mfcad'",
+    )
 
 
 class ErrorResponse(BaseModel):
