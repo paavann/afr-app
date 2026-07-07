@@ -4,7 +4,7 @@ import logging
 import uuid
 from pathlib import Path
 
-from fastapi import FastAPI, File, HTTPException, Request, UploadFile
+from fastapi import FastAPI, File, HTTPException, Query, Request, UploadFile, Form
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
@@ -13,6 +13,7 @@ from config import (
     API_HOST, API_PORT,
     CORS_ORIGINS,
     GRAPH_DIR, MESH_DIR, STATIC_DIR, UPLOAD_DIR,
+    MODEL_REGISTRY, DEFAULT_MODEL,
 )
 from inference import map_predictions, run_inference
 from pipeline import build_face_adjacency_graph, build_render_mesh, save_graph
@@ -63,6 +64,22 @@ async def health_check():
     }
 
 
+@app.get("/api/models", tags=["System"])
+async def list_models():
+    """Return available model types and their display names."""
+    return {
+        "default": DEFAULT_MODEL,
+        "models": {
+            key: {
+                "display_name": entry["display_name"],
+                "num_classes": len(entry["class_map"]),
+                "class_map": entry["class_map"],
+            }
+            for key, entry in MODEL_REGISTRY.items()
+        },
+    }
+
+
 ALLOWED_EXTENSIONS = { ".step", ".stp", ".STEP", ".STP" }
 @app.post(
     "/api/afr",
@@ -75,7 +92,21 @@ ALLOWED_EXTENSIONS = { ".step", ".stp", ".STEP", ".STP" }
     tags=["Inference"],
     summary="Run CAD face segmentation on an uploaded STEP file",
 )
-async def predict_cad(request: Request, file: UploadFile = File(...)):
+async def predict_cad(
+    request: Request,
+    file: UploadFile = File(...),
+    model_type: str = Form(DEFAULT_MODEL, description="Model to use: 'fusiongallery' or 'mfcad'"),
+):
+    # Validate model_type
+    if model_type not in MODEL_REGISTRY:
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                f"Unknown model_type '{model_type}'. "
+                f"Available: {list(MODEL_REGISTRY.keys())}"
+            ),
+        )
+
     if file.filename is None:
         raise HTTPException(status_code=400, detail="No filename provided.")
 
@@ -99,17 +130,16 @@ async def predict_cad(request: Request, file: UploadFile = File(...)):
     stl_path = STATIC_DIR / stl_filename
 
     try:
-        logger.info("📥 Received '%s' (job=%s)", original_filename, job_id)
+        logger.info("Received '%s' (job=%s, model=%s)", original_filename, job_id, model_type)
         contents = await file.read()
         if len(contents) == 0:
             raise HTTPException(status_code=400, detail="Uploaded file is empty.")
 
         upload_path.write_bytes(contents)
-        logger.info("💾 Saved upload → %s (%d bytes)", upload_path, len(contents))
+        logger.info("Saved upload -> %s (%d bytes)", upload_path, len(contents))
 
-        logger.info("🔧 Building face-adjacency graph…")
+        logger.info("Building face-adjacency graph...")
         try:
-            #CHECK ----------
             dgl_graph = build_face_adjacency_graph(upload_path)
         except ValueError as exc:
             raise HTTPException(status_code=422, detail=str(exc))
@@ -123,12 +153,10 @@ async def predict_cad(request: Request, file: UploadFile = File(...)):
                 ),
             )
 
-        #CHECK ----------
         save_graph(dgl_graph, graph_path)
 
-        logger.info("🔧 Building render mesh…")
+        logger.info("Building render mesh...")
         try:
-            #CHECK ----------
             stl_path_out, tri_mapping = build_render_mesh(upload_path, stl_path)
         except ValueError as exc:
             raise HTTPException(status_code=422, detail=str(exc))
@@ -139,29 +167,27 @@ async def predict_cad(request: Request, file: UploadFile = File(...)):
                 detail=f"Mesh triangulation failed: {exc}",
             )
 
-        logger.info("🧠 Running UV-Net segmentation inference…")
-        #CHECK ----------
-        class_indices = run_inference(dgl_graph)
+        logger.info("Running UV-Net segmentation inference (model=%s)...", model_type)
+        class_indices = run_inference(dgl_graph, model_type=model_type)
 
-        #CHECK ----------
-        predictions = map_predictions(class_indices)
-        
+        predictions = map_predictions(class_indices, model_type=model_type)
+
         # --- Print human-readable results to console ---
-        logger.info("=" * 60)
-        logger.info("  RESULTS FOR: %s", original_filename)
-        logger.info("  TOTAL FACES: %d", len(predictions))
-        logger.info("-" * 60)
-        logger.info("  Face ID  |  Feature Type")
-        logger.info("-" * 60)
+        print("=" * 60)
+        print(f"  RESULTS FOR: {original_filename} (model={model_type})")
+        print(f"  TOTAL FACES: {len(predictions)}")
+        print("-" * 60)
+        print("  Face ID  |  Feature Type")
+        print("-" * 60)
         for p in predictions:
-            logger.info("    %4d   |  %s", p['face_id'], p['type'])
-        logger.info("=" * 60)
+            print(f"    {p['face_id']:4d}   |  {p['type']}")
+        print("=" * 60)
 
         base_url = str(request.base_url).rstrip("/")
         mesh_url = f"{base_url}/static/{stl_filename}"
 
         logger.info(
-            "✅ Prediction complete: %d faces, mesh → %s",
+            "Prediction complete: %d faces, mesh -> %s",
             len(predictions),
             mesh_url,
         )
@@ -173,6 +199,7 @@ async def predict_cad(request: Request, file: UploadFile = File(...)):
             predictions=[FacePrediction(**p) for p in predictions],
             num_faces=len(predictions),
             face_mapping=tri_mapping.tolist() if tri_mapping is not None else None,
+            model_type=model_type,
         )
 
     except HTTPException:
@@ -190,7 +217,7 @@ async def predict_cad(request: Request, file: UploadFile = File(...)):
             try:
                 if cleanup_path.exists():
                     cleanup_path.unlink()
-                    logger.debug("🗑️  Cleaned up %s", cleanup_path)
+                    logger.debug("Cleaned up %s", cleanup_path)
             except OSError as e:
                 logger.warning("Cleanup failed for %s: %s", cleanup_path, e)
 
