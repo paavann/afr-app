@@ -41,4 +41,4 @@ To create an optimized production build:
 npm run build
 ```
 
-This will bundle the React application into the `dist/` directory, ready to be served by any static file server.
+This will bundle the React application into the `dist/` directory, ready to be served by static file server.
