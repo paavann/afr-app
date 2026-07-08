@@ -1,94 +1,67 @@
-# CAD Feature Recognition — Inference API
+# AFR Backend
 
-Production-ready FastAPI application that serves as the inference gateway for the UV-Net CAD face segmentation model.
+This directory contains the production-ready FastAPI backend for the Automated Feature Recognition application. It acts as the inference gateway for the UV-Net CAD face segmentation model.
 
-## Architecture
+## How It Works
 
-```
-api/
-├── main.py           # FastAPI app — routes, CORS, static file mount
-├── config.py         # Centralized configuration (paths, CORS, class maps)
-├── schemas.py        # Pydantic response models
-├── pipeline.py       # CAD processing: STEP → DGL graph + STL mesh
-├── inference.py      # Model loading + inference (with stub fallback)
-├── checkpoints/      # Place best.ckpt here
-│   └── README.md
-└── requirements.txt  # Python dependencies
-```
+The backend processes 3D CAD files through a specialized pipeline:
+1. **Upload & Storage**: Receives `.step` or `.stp` files via a REST endpoint.
+2. **CAD Parsing**: Uses `pythonocc-core` (OpenCASCADE) to parse the boundary representation (B-Rep) of the CAD file.
+3. **Graph Construction**: Builds a face-adjacency graph representing the CAD geometry.
+4. **Mesh Generation**: Generates an `.stl` mesh for frontend visualization.
+5. **Inference**: Feeds the graph into a neural network (UV-Net) to classify each face into specific machining features (e.g., chamfer, pocket, slot).
+6. **Response**: Returns a JSON object containing per-face predictions and a URL to the generated 3D mesh.
 
-## Quick Start
+## Setup Instructions
 
-### 1. Install dependencies
+### Why Conda?
+
+This backend relies heavily on `pythonocc-core`, which is a Python wrapper for the OpenCASCADE C++ library. Because it requires complex system-level C++ binaries and libraries to handle CAD kernels, installing it via standard `pip` is extremely difficult and prone to errors. **Conda** manages these heavy C++ dependencies seamlessly, ensuring that the environment is isolated, reproducible, and has all necessary system libraries pre-compiled.
+
+### 1. Create the Conda Environment
+
+You will need [Miniconda](https://docs.conda.io/en/latest/miniconda.html) or Anaconda installed on your system.
 
 ```bash
-# Create conda env with OCC + DGL
-conda create -n afr_api python=3.10
+# Create a dedicated environment with Python 3.10
+conda create -n afr_api python=3.10 -y
+
+# Activate the environment
 conda activate afr_api
-conda install -c conda-forge pythonocc-core
+```
+
+### 2. Install Dependencies
+
+First, install the CAD kernel dependencies via `conda-forge`, and then install the rest of the Python packages via `pip`.
+
+```bash
+# Install pythonocc-core for CAD processing
+conda install -c conda-forge pythonocc-core -y
+
+# Install FastAPI, Uvicorn, and Machine Learning dependencies
 pip install -r requirements.txt
 ```
 
-### 2. (Optional) Add model checkpoint
+### 3. (Optional) Add Model Checkpoint
 
-Place your trained `best.ckpt` in `api/checkpoints/`. Without it, the API runs in **stub mode** with mock predictions.
+To enable actual AI predictions, place your trained PyTorch checkpoint (e.g., `best.ckpt`) inside the `checkpoints/` directory. If a checkpoint is not found, the API will automatically fall back to generating mock predictions for testing purposes.
 
-### 3. Run the server
+### 4. Run the Server
+
+Start the development server using Uvicorn:
 
 ```bash
-cd afr-app/api
 uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
-### 4. Test it
-
-```bash
-curl -X POST http://localhost:8000/api/predict-cad \
-  -F "file=@/path/to/your/model.step"
-```
+The API will be available at `http://localhost:8000`. You can explore the interactive API documentation at `http://localhost:8000/docs`.
 
 ## API Endpoints
 
 | Method | Path | Description |
 |--------|------|-------------|
 | `GET` | `/api/health` | Liveness probe |
-| `POST` | `/api/predict-cad` | Upload STEP file → get predictions + mesh URL |
+| `POST` | `/api/afr` | Upload STEP file → get predictions + mesh URL |
 | `GET` | `/static/{filename}` | Download generated STL meshes |
 | `GET` | `/docs` | Interactive Swagger UI |
 | `GET` | `/redoc` | ReDoc API documentation |
-
-## Response Format
-
-```json
-{
-    "status": "success",
-    "filename": "bracket.step",
-    "mesh_url": "http://localhost:8000/static/bracket_a1b2c3d4e5f6.stl",
-    "predictions": [
-        {"face_id": 0, "type": "rectangular_through_slot"},
-        {"face_id": 1, "type": "chamfer"},
-        {"face_id": 2, "type": "stock"}
-    ],
-    "num_faces": 3
-}
-```
-
-## Class Labels (MFCAD Dataset)
-
-| Index | Feature Type |
-|-------|-------------|
-| 0 | rectangular_through_slot |
-| 1 | triangular_through_slot |
-| 2 | rectangular_passage |
-| 3 | triangular_passage |
-| 4 | 6sides_passage |
-| 5 | rectangular_through_step |
-| 6 | 2sides_through_step |
-| 7 | slanted_through_step |
-| 8 | rectangular_blind_step |
-| 9 | triangular_blind_step |
-| 10 | rectangular_blind_slot |
-| 11 | rectangular_pocket |
-| 12 | triangular_pocket |
-| 13 | 6sides_pocket |
-| 14 | chamfer |
-| 15 | stock |
